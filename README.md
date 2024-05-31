@@ -9,58 +9,35 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract MyTokenERC20 {
-    string public constant name = "MyToken"; 
-    string public constant symbol = "MTK";    
-    uint8 public constant decimals = 18;      
-    uint256 public totalSupply;               
+contract MyTokenERC20 is ERC20 {
+    address public owner;
 
-    mapping(address => uint256) balances;
-
-    mapping(address => mapping(address => uint256)) allowed;
-
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-
-    constructor(uint256 _initialSupply) {
-        totalSupply = _initialSupply * 10 ** uint256(decimals);
-        balances[msg.sender] = totalSupply;
+    constructor(string memory _name, string memory _symbol,uint256 initialSupply) ERC20(_name, _symbol) {
+     _mint (msg.sender, initialSupply);
+     owner = msg.sender;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances[_owner];
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(_to != address(0), "Invalid address");
-        require(balances[msg.sender] >= _value, "Insufficient balance");
-
-        balances[msg.sender] -= _value;
-        balances[_to] += _value;
-        emit Transfer(msg.sender, _to, _value);
-        return true;
+    function mint(address _to, uint256 _amount) public onlyOwner {
+        _mint(_to, _amount);
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        require(_to != address(0), "Invalid address");
-        require(balances[_from] >= _value, "Insufficient balance");
-        require(allowed[_from][msg.sender] >= _value, "Not allowed to transfer this much");
-
-        balances[_from] -= _value;
-        balances[_to] += _value;
-        allowed[_from][msg.sender] -= _value;
-        emit Transfer(_from, _to, _value);
-        return true;
+    function burn(uint256 _amount) public {
+        _burn(msg.sender, _amount);
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool success) {
-        allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
-        return true;
+    function transfer(address _to, uint256 _amount) public override returns (bool) {
+        require(_to != address(0), "ERC20: transfer to the zero address");
+        return super.transfer(_to, _amount);
     }
 
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
-        return allowed[_owner][_spender];
+    function transferFrom(address _from, address _to, uint256 _amount) public override returns (bool) {
+        require(_to != address(0), "ERC20: transfer to the zero address");
+        return super.transferFrom(_from, _to, _amount);
     }
 }
 
